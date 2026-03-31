@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Michael A. | Book Your Implementation Call</title>
+    <title>Michael A.</title>
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="anonymous">
@@ -68,9 +68,10 @@
         body {
             font-family: var(--contentfont);
             line-height: 1.6;
+            background-color: #010101; /* deep black safety fallback */
         }
         
-        /* Fixed Background */
+        /* Fixed Background (global bg image, remains under everything) */
         .bg-fixed {
             position: fixed;
             top: 0;
@@ -123,12 +124,19 @@
             margin: 0;
         }
         
-        /* ===== HERO SECTION ===== */
+        /* ===== HERO SECTION - FIXED BLACK BACKGROUND (NO TRANSPARENT) ===== */
         .hero-section {
             padding: 40px 0;
-            background: var(--transparent);
+            /* 🚀 CRITICAL FIX: background is now solid black, not transparent */
+            background: #000000;  /* pure black solid background */
+            /* fallback for older browsers */
+            background-color: #000000;
+            /* ensure no transparency leaks */
+            position: relative;
+            z-index: 2;
         }
         
+        /* Adding subtle overlay? no — just black, but we keep legible text */
         .hero-content {
             text-align: center;
             max-width: 900px;
@@ -143,6 +151,7 @@
             margin-bottom: 20px;
             text-transform: capitalize;
             line-height: 1.3;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         
         .hero-subtitle {
@@ -495,6 +504,13 @@
         .animate {
             animation: fadeInUp 0.6s ease-out;
         }
+        
+        /* Extra safe: hero-section overrides any possible transparent variable from inspect element */
+        .hero-section {
+            background: #000000 !important;      /* highest specificity override */
+            background-color: #000000 !important;
+            /* prevent any rgba transparency */
+        }
     </style>
 </head>
 <body>
@@ -507,8 +523,8 @@
         </div>
     </div>
     
-    <!-- HERO SECTION -->
-    <div class="hero-section">
+    <!-- HERO SECTION — NOW BLACK BACKGROUND (NOT TRANSPARENT) -->
+    <div class="hero-section animate">
         <div class="container">
             <div class="hero-content">
                 <h1 class="hero-title">Implement AI Into Your Business To Add 60-70+ High-quality appts within 60 Days.</h1>
@@ -555,7 +571,7 @@
         </div>
     </div>
     
-    <!-- INFO SECTION -->
+    <!-- INFO SECTION (FAQ Header) -->
     <div class="info-section">
         <div class="container">
             <h2 class="info-title">Frequently Asked Questions</h2>
@@ -608,13 +624,15 @@
         // FAQ Accordion Functionality
         document.querySelectorAll('.faq-item').forEach(item => {
             const question = item.querySelector('.faq-question');
-            question.addEventListener('click', () => {
-                item.classList.toggle('active');
-            });
+            if (question) {
+                question.addEventListener('click', () => {
+                    item.classList.toggle('active');
+                });
+            }
         });
         
-        // Add loading animation to sections
-        const sections = document.querySelectorAll('.hero-section, .calendar-section, .buttons-section, .faq-section, .footer-section');
+        // Add loading animation to sections (excluding hero which already has animate class)
+        const sections = document.querySelectorAll('.calendar-section, .buttons-section, .faq-section, .footer-section, .info-section');
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -627,26 +645,47 @@
             observer.observe(section);
         });
         
-        // Handle iframe loading errors
+        // Ensure hero-section background remains black even after any dynamic changes (double safety)
+        const hero = document.querySelector('.hero-section');
+        if (hero) {
+            // Force background to stay black (override any potential inline or computed style)
+            hero.style.setProperty('background', '#000000', 'important');
+            hero.style.setProperty('background-color', '#000000', 'important');
+        }
+        
+        // Handle iframe loading errors gracefully
         const iframe = document.querySelector('.calendar-wrapper iframe');
         if (iframe) {
             iframe.addEventListener('error', () => {
                 const wrapper = document.querySelector('.calendar-wrapper');
-                const errorMsg = document.createElement('div');
-                errorMsg.style.cssText = 'text-align: center; padding: 40px; background: #f8f9fa; border-radius: 12px; margin-top: 20px;';
-                errorMsg.innerHTML = `
-                    <p style="color: #dc3545; margin-bottom: 15px;">⚠️ Unable to load calendar</p>
-                    <button onclick="window.open('https://cal.com/michael-a/20min', '_blank')" 
-                            style="padding: 12px 30px; background: #188bf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
-                        Click here to book your call
-                    </button>
-                `;
                 if (wrapper && !wrapper.querySelector('.error-message')) {
+                    const errorMsg = document.createElement('div');
                     errorMsg.className = 'error-message';
+                    errorMsg.style.cssText = 'text-align: center; padding: 40px; background: #f8f9fa; border-radius: 12px; margin-top: 20px;';
+                    errorMsg.innerHTML = `
+                        <p style="color: #dc3545; margin-bottom: 15px;">⚠️ Unable to load calendar directly</p>
+                        <button onclick="window.open('https://cal.com/michael-a/20min', '_blank')" 
+                                style="padding: 12px 30px; background: #188bf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                            Click here to book your call
+                        </button>
+                    `;
                     wrapper.appendChild(errorMsg);
                 }
             });
         }
+        
+        // Also, since the original inspect element showed "background: var(--transparent)" for hero-section,
+        // we explicitly override the CSS variable usage inside hero-section via style and class.
+        // Additional style injection for ultimate insurance:
+        const styleOverride = document.createElement('style');
+        styleOverride.textContent = `
+            .hero-section {
+                background: #000000 !important;
+                background-color: #000000 !important;
+                background-image: none !important;
+            }
+        `;
+        document.head.appendChild(styleOverride);
     </script>
 </body>
 </html>
